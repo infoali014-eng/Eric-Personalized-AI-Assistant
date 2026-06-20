@@ -28,9 +28,10 @@ Eric-AI/
 │   └── json_cleaner.py   # Sanitizes and extracts pure JSON block outputs from the LLM
 │
 └── actions/
-    ├── app_control.py    # OPEN_APP, CLOSE_APP, SEARCH_WEB, WHATSAPP_MESSAGE
+    ├── app_control.py    # OPEN_APP, CLOSE_APP, SEARCH_WEB
     ├── system_control.py # SYSTEM_LOCK, SYSTEM_SHUTDOWN, SYSTEM_RESTART
-    └── file_manager.py   # CREATE_FILE, DELETE_FILE, CREATE_FOLDER, DELETE_FOLDER, RENAME_FILE
+    ├── file_manager.py   # CREATE_FILE, DELETE_FILE, CREATE_FOLDER, DELETE_FOLDER, RENAME_FILE
+    └── whatsapp.py       # WHATSAPP_MESSAGE automated sender using Selenium Webdriver
 ```
 
 ## Setup & Installation
@@ -74,3 +75,12 @@ Eric AI has a built-in SQLite persistent memory system that stores user-specific
 - **Remembering Information**: Simply say or type `"remember that [something]"` (e.g. `"remember that my favorite browser is Chrome"` or `"remember that Ali is my friend"`). The assistant will store this permanently.
 - **Checking Stored Memories**: Ask `"what do you remember about me"`.
 - **Dynamic Context Injection**: Before query execution, Eric AI analyzes your instructions, retrieves relevant items from memory, and injects them into the Gemini model prompt to personalize actions (e.g. preferring a specific browser or name). Memory is only sent if relevant keywords match.
+
+## WhatsApp Automation
+
+Eric AI features an automated WhatsApp messaging handler using Selenium.
+
+- **Command Format**: Say or type `"send message to [contact]: [message]"` (e.g., `"send message to Ali: I am coming"`).
+- **Safety Confirmation**: Before opening WhatsApp Web to send a message, the assistant will ask: `"Do you want me to send this message?"`. It will listen for a voice response (like "yes", "sure", "cancel") or wait for console text input.
+- **Session Persistence**: Eric AI saves your browser session data in a local profile (`whatsapp_selenium_profile/`). Once logged in by scanning the QR code, future message attempts will bypass the QR code step and navigate directly to your account.
+- **Delivery Confirmation**: Once the message has been sent, it will announce: `"Message sent to [contact] successfully."`. If the contact cannot be found, it returns a safe warning message.

@@ -18,6 +18,8 @@ from actions.file_manager import (
     handle_rename_file
 )
 
+from actions.whatsapp import handle_automated_whatsapp
+
 def route_and_execute(command):
     """
     Routes the decoded JSON command to the appropriate action handler.
@@ -38,7 +40,7 @@ def route_and_execute(command):
         return handle_search_web(command)
         
     elif action == "WHATSAPP_MESSAGE":
-        return handle_whatsapp_message(command)
+        return handle_automated_whatsapp(command)
         
     elif action == "SYSTEM_LOCK":
         return handle_system_lock(command)
