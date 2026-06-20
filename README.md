@@ -12,10 +12,12 @@ Eric-AI/
 ├── .env                 # API Key credentials (ignored by git)
 │
 ├── core/
-│   ├── assistant.py      # State machine (Idle/Active modes, inactivity timeout, voice loops, intercepts)
-│   ├── command_router.py # Decodes JSON commands and routes to appropriate execution handler
-│   ├── executor.py       # Reliable executor (handles dangerous gates, logging, and retry-on-fail)
-│   └── task_planner.py   # Multi-step task planner (sends prompt to Gemini, auto-learns usage patterns)
+│   ├── assistant.py        # State machine (Idle/Active modes, inactivity timeout, voice loops, intercepts)
+│   ├── background_agent.py # Daemon-style background manager running Tkinter main loop and async command threads
+│   ├── command_router.py   # Decodes JSON commands and routes to appropriate execution handler
+│   ├── executor.py         # Reliable executor (handles dangerous gates, logging, and retry-on-fail)
+│   ├── hotword_engine.py   # Background streaming wake word engine using listen_in_background
+│   └── task_planner.py     # Multi-step task planner (sends prompt to Gemini, auto-learns usage patterns)
 │
 ├── voice/
 │   ├── speech_to_text.py # Manages microphone capture and Google speech recognition API
@@ -25,6 +27,11 @@ Eric-AI/
 ├── vision/
 │   ├── screen_reader.py      # Captures screen image and sends to Gemini Vision API (standard mode)
 │   └── smart_screen_agent.py # Interactive screen assist agent (supports click automation)
+│
+├── ui/
+│   ├── animations.py    # Canvas animations for orb states (Idle pulsing, Listening waves, Processing arcs)
+│   ├── floating_orb.py  # Transparent, draggable frameless topmost orb bubble overlay
+│   └── main_window.py   # Sleek dark-themed Jarvis panel control dashboard
 │
 ├── memory/
 │   ├── memory_db.py      # SQLite database schema and insertions/queries
@@ -47,7 +54,7 @@ Eric-AI/
    ```bash
    pip install -r requirements.txt
    ```
-3. Voice mode requires `PyAudio`. If installing it fails, please install Visual Studio Build Tools, or download a pre-compiled `.whl` wheel for your Python version, then run:
+3. Voice mode and wake-word streaming require `PyAudio`. If installing it fails, please install Visual Studio Build Tools, or download a pre-compiled `.whl` wheel for your Python version, then run:
    ```bash
    pip install PyAudio
    ```
@@ -58,21 +65,35 @@ Eric-AI/
 
 ## Usage
 
-### Voice Mode (Default)
-Run the assistant:
+### Desktop GUI Mode (Default)
+Run the assistant dashboard & orb:
 ```bash
 python main.py
 ```
-- The assistant starts in **IDLE** mode.
-- Speak "**Hey Eric**" or "**Eric**" to wake it.
-- Once active, say any instruction (e.g. "open chrome", "lock laptop").
-- If inactive for 15 seconds, it will return to sleep mode automatically.
+- A **glowing floating orb** (Jarvis bubble) will appear in the bottom right corner of your screen.
+- You can **drag the orb** to position it anywhere. It stays topmost above all other applications.
+- A **sleek dark control dashboard** will open, showing console logs and execution plans. You can hide or show it.
+- **Double click / Click the orb** or say `"Hey Eric"` to wake the assistant and start speaking.
+- You can also type manual commands in the input box at the bottom of the dashboard panel.
 
-### Text Mode Fallback
-If you don't have a microphone or PyAudio is not installed, the app automatically falls back to interactive text mode. You can also force text mode:
+### CLI Text Mode Fallback
+If you want to run the assistant directly in your terminal console:
 ```bash
 python main.py --text
 ```
+
+### CLI Voice Mode
+To run the terminal voice loop without the graphical interface:
+```bash
+python main.py --voice-cli
+```
+
+## Desktop UI & Background Daemon
+
+Eric AI operates a lightweight, responsive desktop client:
+- **Orb Animation States**: Pulsing cyan (Idle), concentric pink waves (Listening), rotating gold/blue arcs (Processing).
+- **Asynchronous Execution Threading**: Voice listening and task planning run in background threads, ensuring the desktop UI remains fluid (60 FPS) and never freezes.
+- **Hotword Engine**: Continuous streaming listener (`listen_in_background`) runs on a background microphone feed to wake the assistant instantly within <300ms.
 
 ## Task Planning System
 

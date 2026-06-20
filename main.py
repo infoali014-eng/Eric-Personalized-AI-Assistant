@@ -51,8 +51,19 @@ def run_voice_mode():
         print(f"Could not start voice assistant: {e}. Falling back to text mode.")
         run_text_mode()
 
+def run_gui_mode():
+    try:
+        from core.background_agent import BackgroundAgent
+        agent = BackgroundAgent()
+        agent.run()
+    except Exception as e:
+        print(f"Could not start GUI Assistant: {e}. Falling back to CLI mode.")
+        run_text_mode()
+
 if __name__ == "__main__":
     if "--text" in sys.argv:
         run_text_mode()
-    else:
+    elif "--voice-cli" in sys.argv:
         run_voice_mode()
+    else:
+        run_gui_mode()
