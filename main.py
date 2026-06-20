@@ -11,16 +11,13 @@ def run():
         if user_input.lower() == "exit":
             break
 
-        response = get_command(user_input)
-
-        print("Gemini Raw Output:", response)
-
         try:
+            response = get_command(user_input)
+            print("Gemini Raw Output:", response)
             command = json.loads(response)
             execute_command(command)
-
         except Exception as e:
-            print("Error parsing JSON:", e)
+            print(f"\n⚠️ Error: {e}\n(Please check your internet connection or API key config)\n")
 
 if __name__ == "__main__":
     run()
