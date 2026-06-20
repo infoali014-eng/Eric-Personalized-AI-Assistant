@@ -7,6 +7,8 @@ from agent import get_command
 from utils.json_cleaner import clean_and_parse_json
 from core.command_router import route_and_execute
 
+from memory.memory_manager import process_memory_command
+
 class EricAssistant:
     def __init__(self):
         self.mode = "IDLE"  # IDLE or ACTIVE
@@ -16,6 +18,12 @@ class EricAssistant:
     def process_command(self, user_speech):
         """Sends user speech to Gemini, handles retries, and executes the action."""
         print(f"Processing command: '{user_speech}'")
+        
+        # Intercept memory commands
+        memory_result = process_memory_command(user_speech)
+        if memory_result is not None:
+            speak(memory_result)
+            return
         
         # Try once
         response = get_command(user_speech)

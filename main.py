@@ -13,6 +13,13 @@ def run_text_mode():
             if user_input.lower() == "exit":
                 break
 
+            # Intercept memory commands
+            from memory.memory_manager import process_memory_command
+            memory_result = process_memory_command(user_input)
+            if memory_result is not None:
+                print(f"Assistant: {memory_result}")
+                continue
+
             response = get_command(user_input)
             print("Gemini Raw Output:", response)
             command = clean_and_parse_json(response)
