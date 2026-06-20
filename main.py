@@ -13,6 +13,15 @@ def run_text_mode():
             if user_input.lower() == "exit":
                 break
 
+            # Intercept screen understanding commands
+            user_input_clean = user_input.lower().strip()
+            if "look at my screen" in user_input_clean or "look at screen" in user_input_clean:
+                print("Assistant: Let me look at your screen...")
+                from vision.screen_reader import capture_and_analyze_screen
+                analysis = capture_and_analyze_screen()
+                print(f"Assistant: {analysis}")
+                continue
+
             # Intercept memory commands
             from memory.memory_manager import process_memory_command
             memory_result = process_memory_command(user_input)

@@ -8,6 +8,7 @@ from utils.json_cleaner import clean_and_parse_json
 from core.command_router import route_and_execute
 
 from memory.memory_manager import process_memory_command
+from vision.screen_reader import capture_and_analyze_screen
 
 class EricAssistant:
     def __init__(self):
@@ -19,6 +20,15 @@ class EricAssistant:
         """Sends user speech to Gemini, handles retries, and executes the action."""
         print(f"Processing command: '{user_speech}'")
         
+        user_speech_clean = user_speech.lower().strip()
+        
+        # Intercept screen understanding commands
+        if "look at my screen" in user_speech_clean or "look at screen" in user_speech_clean:
+            speak("Let me look at your screen.")
+            analysis = capture_and_analyze_screen()
+            speak(analysis)
+            return
+            
         # Intercept memory commands
         memory_result = process_memory_command(user_speech)
         if memory_result is not None:

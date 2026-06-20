@@ -20,6 +20,9 @@ Eric-AI/
 │   ├── text_to_speech.py # Handles TTS engine verbal responses (pyttsx3)
 │   └── wake_word.py      # Listens continuously for wake word detection ("Hey Eric")
 │
+├── vision/
+│   └── screen_reader.py  # Captures screen image and sends to Gemini Vision API
+│
 ├── memory/
 │   ├── memory_db.py      # SQLite database schema and insertions/queries
 │   └── memory_manager.py # Handles command interception and context retrieval keyword matching
@@ -84,3 +87,12 @@ Eric AI features an automated WhatsApp messaging handler using Selenium.
 - **Safety Confirmation**: Before opening WhatsApp Web to send a message, the assistant will ask: `"Do you want me to send this message?"`. It will listen for a voice response (like "yes", "sure", "cancel") or wait for console text input.
 - **Session Persistence**: Eric AI saves your browser session data in a local profile (`whatsapp_selenium_profile/`). Once logged in by scanning the QR code, future message attempts will bypass the QR code step and navigate directly to your account.
 - **Delivery Confirmation**: Once the message has been sent, it will announce: `"Message sent to [contact] successfully."`. If the contact cannot be found, it returns a safe warning message.
+
+## Screen Understanding (Vision)
+
+Eric AI has screen-awareness capability using Gemini Vision API.
+
+- **Command Format**: Say or type `"look at my screen"` or `"look at screen"`.
+- **Flow**: The assistant takes an on-demand screenshot of your display, passes the image to Gemini, and asks: `"What is on this screen and what should I do next?"`.
+- **Capabilities**: Eric AI reads active errors, interprets application windows, lists buttons or text, and advises you on the next steps based on visual context.
+- **Safety Guarantee**: Screenshot capture only triggers when you explicitly request it. No continuous monitoring or passive recording occurs.
