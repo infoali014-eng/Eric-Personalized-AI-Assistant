@@ -1,1 +1,8 @@
 google-genai
+python-dotenv
+pyautogui
+psutil
+SpeechRecognition
+pyttsx3
+# PyAudio (Requires C++ build tools on Windows or pre-compiled wheel)
+# Install via: pip install PyAudio

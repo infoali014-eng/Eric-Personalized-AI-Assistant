@@ -1,63 +1,64 @@
-# Eric AI - Local Desktop Assistant
+# Eric AI - Local Voice & Desktop Assistant
 
-Eric AI is a local desktop assistant that converts natural language user instructions into structured executable JSON commands and executes them on your Windows PC.
+Eric AI is a real-time voice-controlled local desktop assistant that converts spoken/text instructions into structured executable commands using Gemini 2.5 and executes them on your Windows PC.
 
-## Supported Actions
+## Project Structure (Clean Architecture)
 
-1. **OPEN_APP**: Opens a specified application (e.g., "open chrome" or "start notepad").
-2. **CLOSE_APP**: Closes an active application (e.g., "close chrome").
-3. **CREATE_FILE**: Creates a new file at a specified path with optional content.
-4. **DELETE_FILE**: Deletes a file at a specified path.
-5. **CREATE_FOLDER**: Creates a new directory.
-6. **DELETE_FOLDER**: Recursively deletes a directory.
-7. **RENAME_FILE**: Renames or moves a file.
-8. **SYSTEM_LOCK**: Locks the Windows operating system.
-9. **SYSTEM_SHUTDOWN**: Shuts down the PC.
-10. **SYSTEM_RESTART**: Restarts the PC.
-11. **SEARCH_WEB**: Performs a web search using your default web browser.
-12. **WHATSAPP_MESSAGE**: Prepares and opens a WhatsApp message via WhatsApp Web.
-
-## Action JSON Schema
-
-The actions follow this strict JSON format:
-
-```json
-{
-  "action": "ACTION_NAME",
-  "target": "optional target app/file/person",
-  "content": "optional message or file content",
-  "path": "optional file path"
-}
+```text
+Eric-AI/
+├── main.py              # Application entrypoint (Runs voice mode by default; fallback to text mode)
+├── agent.py             # Interfaces with Gemini API
+├── config.py            # Holds SYSTEM_PROMPT (strict JSON mode) and settings
+├── .env                 # API Key credentials (ignored by git)
+│
+├── core/
+│   ├── assistant.py      # State machine (Idle/Active modes, inactivity timeout, voice loops)
+│   └── command_router.py # Decodes JSON commands and routes to appropriate execution handler
+│
+├── voice/
+│   ├── speech_to_text.py # Manages microphone capture and Google speech recognition API
+│   ├── text_to_speech.py # Handles TTS engine verbal responses (pyttsx3)
+│   └── wake_word.py      # Listens continuously for wake word detection ("Hey Eric")
+│
+├── utils/
+│   └── json_cleaner.py   # Sanitizes and extracts pure JSON block outputs from the LLM
+│
+└── actions/
+    ├── app_control.py    # OPEN_APP, CLOSE_APP, SEARCH_WEB, WHATSAPP_MESSAGE
+    ├── system_control.py # SYSTEM_LOCK, SYSTEM_SHUTDOWN, SYSTEM_RESTART
+    └── file_manager.py   # CREATE_FILE, DELETE_FILE, CREATE_FOLDER, DELETE_FOLDER, RENAME_FILE
 ```
 
 ## Setup & Installation
 
 1. Make sure you have Python 3.10+ installed.
-2. Clone the repository.
-3. Install dependencies:
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Set your `GEMINI_API_KEY` environment variable:
-   ```cmd
-   set GEMINI_API_KEY=your_gemini_api_key_here
+3. Voice mode requires `PyAudio`. If installing it fails, please install Visual Studio Build Tools, or download a pre-compiled `.whl` wheel for your Python version, then run:
+   ```bash
+   pip install PyAudio
+   ```
+4. Set your `GEMINI_API_KEY` in the `.env` file or environment variables:
+   ```env
+   GEMINI_API_KEY=your_key_here
    ```
 
 ## Usage
 
-### Interactive Mode
-
-To run the interactive loop:
+### Voice Mode (Default)
+Run the assistant:
 ```bash
-python eric_ai.py
+python main.py
 ```
+- The assistant starts in **IDLE** mode.
+- Speak "**Hey Eric**" or "**Eric**" to wake it.
+- Once active, say any instruction (e.g. "open chrome", "lock laptop").
+- If inactive for 15 seconds, it will return to sleep mode automatically.
 
-### CLI Mode
-
-To parse and execute a single command directly from the terminal:
+### Text Mode Fallback
+If you don't have a microphone or PyAudio is not installed, the app automatically falls back to interactive text mode. You can also force text mode:
 ```bash
-python eric_ai.py open chrome
-```
-```bash
-python eric_ai.py create file test.txt with content Hello World
+python main.py --text
 ```

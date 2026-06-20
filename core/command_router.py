@@ -1,0 +1,71 @@
+import sys
+from actions.system_control import (
+    handle_system_lock,
+    handle_system_shutdown,
+    handle_system_restart
+)
+from actions.app_control import (
+    handle_open_app,
+    handle_close_app,
+    handle_search_web,
+    handle_whatsapp_message
+)
+from actions.file_manager import (
+    handle_create_file,
+    handle_delete_file,
+    handle_create_folder,
+    handle_delete_folder,
+    handle_rename_file
+)
+
+def route_and_execute(command):
+    """
+    Routes the decoded JSON command to the appropriate action handler.
+    Returns a text response describing the result of the action.
+    """
+    if not isinstance(command, dict):
+        return "Invalid command format received"
+
+    action = command.get("action", "").upper()
+    
+    if action == "OPEN_APP":
+        return handle_open_app(command)
+        
+    elif action == "CLOSE_APP":
+        return handle_close_app(command)
+        
+    elif action == "SEARCH_WEB":
+        return handle_search_web(command)
+        
+    elif action == "WHATSAPP_MESSAGE":
+        return handle_whatsapp_message(command)
+        
+    elif action == "SYSTEM_LOCK":
+        return handle_system_lock(command)
+        
+    elif action == "SYSTEM_SHUTDOWN":
+        return handle_system_shutdown(command)
+        
+    elif action == "SYSTEM_RESTART":
+        return handle_system_restart(command)
+        
+    elif action == "CREATE_FILE":
+        return handle_create_file(command)
+        
+    elif action == "DELETE_FILE":
+        return handle_delete_file(command)
+        
+    elif action == "CREATE_FOLDER":
+        return handle_create_folder(command)
+        
+    elif action == "DELETE_FOLDER":
+        return handle_delete_folder(command)
+        
+    elif action == "RENAME_FILE":
+        return handle_rename_file(command)
+        
+    elif action == "UNKNOWN" or not action:
+        return "I am not sure how to handle that instruction"
+        
+    else:
+        return f"Unknown action: {action}"
