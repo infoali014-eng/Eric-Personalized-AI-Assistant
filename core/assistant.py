@@ -9,6 +9,7 @@ from core.command_router import route_and_execute
 
 from memory.memory_manager import process_memory_command
 from vision.screen_reader import capture_and_analyze_screen
+from vision.smart_screen_agent import capture_and_assist
 
 class EricAssistant:
     def __init__(self):
@@ -22,6 +23,13 @@ class EricAssistant:
         
         user_speech_clean = user_speech.lower().strip()
         
+        # Intercept Assist Mode / help commands
+        if "help me fix this" in user_speech_clean or "assist mode" in user_speech_clean:
+            speak("Activating Assist Mode.")
+            result = capture_and_assist()
+            speak(result)
+            return
+            
         # Intercept screen understanding commands
         if "look at my screen" in user_speech_clean or "look at screen" in user_speech_clean:
             speak("Let me look at your screen.")
@@ -35,26 +43,13 @@ class EricAssistant:
             speak(memory_result)
             return
         
-        # Try once
-        response = get_command(user_speech)
-        print(f"Gemini Raw Response: {response}")
-        
+        # Generate and execute task plan
         try:
-            command = clean_and_parse_json(response)
-        except ValueError as e:
-            print(f"Invalid JSON returned. Retrying once... Error: {e}")
-            # Retry once
-            response = get_command(user_speech)
-            print(f"Gemini Retry Raw Response: {response}")
-            try:
-                command = clean_and_parse_json(response)
-            except ValueError:
-                speak("I didn't understand that instruction")
-                return
-
-        # Execute and speak the confirmation
-        tts_response = route_and_execute(command)
-        speak(tts_response)
+            from core.task_planner import generate_plan, execute_plan
+            plan = generate_plan(user_speech)
+            execute_plan(plan)
+        except Exception as e:
+            speak(f"Could not execute task plan: {e}")
 
     def run_loop(self):
         print("🔥 Eric AI Voice Assistant Started (Press Ctrl+C to quit)\n")

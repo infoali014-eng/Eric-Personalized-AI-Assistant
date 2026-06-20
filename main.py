@@ -15,6 +15,13 @@ def run_text_mode():
 
             # Intercept screen understanding commands
             user_input_clean = user_input.lower().strip()
+            if "help me fix this" in user_input_clean or "assist mode" in user_input_clean:
+                print("Assistant: Activating Assist Mode...")
+                from vision.smart_screen_agent import capture_and_assist
+                result = capture_and_assist()
+                print(f"Assistant: {result}")
+                continue
+
             if "look at my screen" in user_input_clean or "look at screen" in user_input_clean:
                 print("Assistant: Let me look at your screen...")
                 from vision.screen_reader import capture_and_analyze_screen
@@ -29,11 +36,9 @@ def run_text_mode():
                 print(f"Assistant: {memory_result}")
                 continue
 
-            response = get_command(user_input)
-            print("Gemini Raw Output:", response)
-            command = clean_and_parse_json(response)
-            result = route_and_execute(command)
-            print(f"Assistant: {result}")
+            from core.task_planner import generate_plan, execute_plan
+            plan = generate_plan(user_input)
+            execute_plan(plan)
         except Exception as e:
             print(f"\n⚠️ Error: {e}\n")
 

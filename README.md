@@ -12,8 +12,10 @@ Eric-AI/
 ├── .env                 # API Key credentials (ignored by git)
 │
 ├── core/
-│   ├── assistant.py      # State machine (Idle/Active modes, inactivity timeout, voice loops, memory intercept)
-│   └── command_router.py # Decodes JSON commands and routes to appropriate execution handler
+│   ├── assistant.py      # State machine (Idle/Active modes, inactivity timeout, voice loops, intercepts)
+│   ├── command_router.py # Decodes JSON commands and routes to appropriate execution handler
+│   ├── executor.py       # Reliable executor (handles dangerous gates, logging, and retry-on-fail)
+│   └── task_planner.py   # Multi-step task planner (sends prompt to Gemini, auto-learns usage patterns)
 │
 ├── voice/
 │   ├── speech_to_text.py # Manages microphone capture and Google speech recognition API
@@ -21,7 +23,8 @@ Eric-AI/
 │   └── wake_word.py      # Listens continuously for wake word detection ("Hey Eric")
 │
 ├── vision/
-│   └── screen_reader.py  # Captures screen image and sends to Gemini Vision API
+│   ├── screen_reader.py      # Captures screen image and sends to Gemini Vision API (standard mode)
+│   └── smart_screen_agent.py # Interactive screen assist agent (supports click automation)
 │
 ├── memory/
 │   ├── memory_db.py      # SQLite database schema and insertions/queries
@@ -71,28 +74,37 @@ If you don't have a microphone or PyAudio is not installed, the app automaticall
 python main.py --text
 ```
 
+## Task Planning System
+
+Eric AI uses a multi-step task planning engine that splits complex user instructions into sequential execution steps.
+- **Example**: `"open chrome and search AI news and send summary to Ali on WhatsApp"`
+- **Plan Generation**: Gemini parses the instruction and returns a structured list of steps.
+- **Execution Flow**: Steps are executed sequentially. If any step fails, the planner halts execution to prevent runaway commands.
+
+## Reliable Executor & Logging
+
+All commands are processed by a unified executor (`core/executor.py`) to guarantee production-level safety and reliability:
+- **Retry System**: If a command fails due to a transient exception, it is automatically retried once.
+- **Logs**: Every attempt and outcome is logged with timestamps in `eric_execution.log`.
+- **Safe Mode**: Potentially dangerous commands (such as `SYSTEM_SHUTDOWN`, `SYSTEM_RESTART`, `DELETE_FILE`, `DELETE_FOLDER`, and `WHATSAPP_MESSAGE`) require explicit voice or console confirmation before execution.
+
 ## Memory System
 
 Eric AI has a built-in SQLite persistent memory system that stores user-specific preferences, notes, and contacts.
-
 - **Remembering Information**: Simply say or type `"remember that [something]"` (e.g. `"remember that my favorite browser is Chrome"` or `"remember that Ali is my friend"`). The assistant will store this permanently.
 - **Checking Stored Memories**: Ask `"what do you remember about me"`.
-- **Dynamic Context Injection**: Before query execution, Eric AI analyzes your instructions, retrieves relevant items from memory, and injects them into the Gemini model prompt to personalize actions (e.g. preferring a specific browser or name). Memory is only sent if relevant keywords match.
+- **Dynamic Context Injection**: Relevant memories are loaded and injected before task planning to customize actions.
+- **Auto-Learning/Usage Patterns**: Eric AI learns preferences based on usage history. For example, opening Chrome 3 times automatically logs a user preference for Chrome.
 
 ## WhatsApp Automation
 
 Eric AI features an automated WhatsApp messaging handler using Selenium.
-
 - **Command Format**: Say or type `"send message to [contact]: [message]"` (e.g., `"send message to Ali: I am coming"`).
-- **Safety Confirmation**: Before opening WhatsApp Web to send a message, the assistant will ask: `"Do you want me to send this message?"`. It will listen for a voice response (like "yes", "sure", "cancel") or wait for console text input.
-- **Session Persistence**: Eric AI saves your browser session data in a local profile (`whatsapp_selenium_profile/`). Once logged in by scanning the QR code, future message attempts will bypass the QR code step and navigate directly to your account.
-- **Delivery Confirmation**: Once the message has been sent, it will announce: `"Message sent to [contact] successfully."`. If the contact cannot be found, it returns a safe warning message.
+- **Session Persistence**: Saves your browser session data in a local profile (`whatsapp_selenium_profile/`). Once logged in by scanning the QR code, future attempts navigate directly.
 
-## Screen Understanding (Vision)
+## Screen Understanding & Smart Assist (Vision)
 
-Eric AI has screen-awareness capability using Gemini Vision API.
-
-- **Command Format**: Say or type `"look at my screen"` or `"look at screen"`.
-- **Flow**: The assistant takes an on-demand screenshot of your display, passes the image to Gemini, and asks: `"What is on this screen and what should I do next?"`.
-- **Capabilities**: Eric AI reads active errors, interprets application windows, lists buttons or text, and advises you on the next steps based on visual context.
-- **Safety Guarantee**: Screenshot capture only triggers when you explicitly request it. No continuous monitoring or passive recording occurs.
+Eric AI has screen-awareness capabilities using Gemini Vision API.
+- **Command Format**: Say or type `"look at screen"` for standard description, or `"help me fix this"` / `"assist mode"` for interactive help.
+- **Interactive Assist**: Eric AI captures a screenshot, analyzes it, suggests next steps, and can perform **autonomous clicks** on buttons or error popups if its confidence score exceeds a threshold (0.8).
+- **Safety**: Screenshot capture only triggers on explicit request. No continuous monitoring or passive recording occurs.

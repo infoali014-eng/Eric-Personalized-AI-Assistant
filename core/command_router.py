@@ -20,14 +20,12 @@ from actions.file_manager import (
 
 from actions.whatsapp import handle_automated_whatsapp
 
-def route_and_execute(command):
-    """
-    Routes the decoded JSON command to the appropriate action handler.
-    Returns a text response describing the result of the action.
-    """
-    if not isinstance(command, dict):
-        return "Invalid command format received"
+from core.executor import execute_action
 
+def _route_only(command):
+    """
+    Directly routes the command to the correct action handler.
+    """
     action = command.get("action", "").upper()
     
     if action == "OPEN_APP":
@@ -71,3 +69,13 @@ def route_and_execute(command):
         
     else:
         return f"Unknown action: {action}"
+
+def route_and_execute(command):
+    """
+    Routes and executes a command through the reliable unified executor.
+    """
+    if not isinstance(command, dict):
+        return "Invalid command format received"
+        
+    success, message = execute_action(command, _route_only)
+    return message
