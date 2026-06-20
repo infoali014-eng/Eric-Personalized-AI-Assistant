@@ -110,41 +110,27 @@ class BackgroundAgent:
         
         text_clean = text.lower().strip()
         
-        # 1. Memory intercept
-        from memory.memory_manager import process_memory_command
-        memory_result = process_memory_command(text)
-        if memory_result is not None:
-            self.root.after(0, lambda: self.window.write_log(f"Memory: {memory_result}"))
-            speak(memory_result)
+        # 1. Route through Global Interceptor (Interceptors/Workflows/Memory/Vision)
+        from core.command_interceptor import intercept_input
+        intercepted, result = intercept_input(text)
+        
+        if intercepted:
+            self.root.after(0, lambda: self.window.write_log(f"Interceptor output: {result}"))
+            speak(result)
             self.root.after(0, self.reset_to_idle)
             return
 
-        # 2. Vision Assist Mode / screen intercept
-        if "help me fix this" in text_clean or "assist mode" in text_clean:
-            self.root.after(0, lambda: self.window.write_log("Assist Mode activated. Capturing screen..."))
-            from vision.smart_screen_agent import capture_and_assist
-            result = capture_and_assist()
-            self.root.after(0, lambda: self.window.write_log(result))
-            self.root.after(0, self.reset_to_idle)
-            return
+        # Use normalized input for planning
+        normalized_input = result
 
-        if "look at my screen" in text_clean or "look at screen" in text_clean:
-            self.root.after(0, lambda: self.window.write_log("Analyzing screen..."))
-            from vision.screen_reader import capture_and_analyze_screen
-            analysis = capture_and_analyze_screen()
-            self.root.after(0, lambda: self.window.write_log(f"Analysis: {analysis}"))
-            speak(analysis)
-            self.root.after(0, self.reset_to_idle)
-            return
-
-        # 3. Planning & Executor loop
+        # 2. Planning & Executor loop
         try:
             # Overwrite task_planner printing to write directly to window log
             # We can capture logs by importing modules
             from core.task_planner import generate_plan, execute_plan
             
             self.root.after(0, lambda: self.window.write_log("Generating execution plan..."))
-            plan = generate_plan(text)
+            plan = generate_plan(normalized_input)
             steps_count = len(plan.get("steps", []))
             self.root.after(0, lambda: self.window.write_log(f"Plan generated with {steps_count} steps."))
             

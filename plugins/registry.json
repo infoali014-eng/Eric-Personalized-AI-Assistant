@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    "plugins.app_control_plugin.AppControlPlugin",
+    "plugins.system_control_plugin.SystemControlPlugin",
+    "plugins.file_manager_plugin.FileManagerPlugin",
+    "plugins.whatsapp_plugin.WhatsAppPlugin"
+  ]
+}

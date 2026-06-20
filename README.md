@@ -12,12 +12,15 @@ Eric-AI/
 ├── .env                 # API Key credentials (ignored by git)
 │
 ├── core/
-│   ├── assistant.py        # State machine (Idle/Active modes, inactivity timeout, voice loops, intercepts)
-│   ├── background_agent.py # Daemon-style background manager running Tkinter main loop and async command threads
-│   ├── command_router.py   # Decodes JSON commands and routes to appropriate execution handler
-│   ├── executor.py         # Reliable executor (handles dangerous gates, logging, and retry-on-fail)
-│   ├── hotword_engine.py   # Background streaming wake word engine using listen_in_background
-│   └── task_planner.py     # Multi-step task planner (sends prompt to Gemini, auto-learns usage patterns)
+│   ├── assistant.py          # State machine (Idle/Active modes, inactivity timeout, voice loops)
+│   ├── background_agent.py   # Daemon-style background manager running Tkinter main loop and async command threads
+│   ├── command_interceptor.py# Global gatekeeper normalizing input and checking intercept triggers
+│   ├── command_router.py     # Decodes JSON commands and routes them through the Plugin Manager
+│   ├── executor.py           # Reliable executor (handles dangerous gates, logging, and retry-on-fail)
+│   ├── hotword_engine.py     # Background streaming wake word engine using listen_in_background
+│   ├── task_optimizer.py     # Plan optimizer (merges redundant actions, simplifies directories)
+│   ├── task_planner.py       # Multi-step task planner (sends prompt to Gemini, auto-learns usage patterns)
+│   └── workflow_engine.py    # Auto-workflow engine (loads, executes, and auto-detects habits)
 │
 ├── voice/
 │   ├── speech_to_text.py # Manages microphone capture and Google speech recognition API
@@ -37,14 +40,23 @@ Eric-AI/
 │   ├── memory_db.py      # SQLite database schema and insertions/queries
 │   └── memory_manager.py # Handles command interception and context retrieval keyword matching
 │
+├── plugins/
+│   ├── base_plugin.py            # Base abstract class for plugins
+│   ├── plugin_manager.py         # Dynamic importer and router of registered plugin capabilities
+│   ├── registry.json             # Map list of registered plugin modules
+│   ├── app_control_plugin.py     # Handles OPEN_APP, CLOSE_APP, SEARCH_WEB
+│   ├── file_manager_plugin.py    # Handles CREATE_FILE, DELETE_FILE, CREATE_FOLDER, DELETE_FOLDER, RENAME_FILE
+│   ├── system_control_plugin.py  # Handles SYSTEM_LOCK, SYSTEM_SHUTDOWN, SYSTEM_RESTART
+│   └── whatsapp_plugin.py        # Handles WHATSAPP_MESSAGE automated messages
+│
 ├── utils/
 │   └── json_cleaner.py   # Sanitizes and extracts pure JSON block outputs from the LLM
 │
-└── actions/
-    ├── app_control.py    # OPEN_APP, CLOSE_APP, SEARCH_WEB
-    ├── system_control.py # SYSTEM_LOCK, SYSTEM_SHUTDOWN, SYSTEM_RESTART
-    ├── file_manager.py   # CREATE_FILE, DELETE_FILE, CREATE_FOLDER, DELETE_FOLDER, RENAME_FILE
-    └── whatsapp.py       # WHATSAPP_MESSAGE automated sender using Selenium Webdriver
+└── actions/              # Legacy standalone handlers (plugins route through here)
+    ├── app_control.py
+    ├── system_control.py
+    ├── file_manager.py
+    └── whatsapp.py
 ```
 
 ## Setup & Installation
@@ -95,12 +107,28 @@ Eric AI operates a lightweight, responsive desktop client:
 - **Asynchronous Execution Threading**: Voice listening and task planning run in background threads, ensuring the desktop UI remains fluid (60 FPS) and never freezes.
 - **Hotword Engine**: Continuous streaming listener (`listen_in_background`) runs on a background microphone feed to wake the assistant instantly within <300ms.
 
-## Task Planning System
+## Task Planning & Optimization System
 
 Eric AI uses a multi-step task planning engine that splits complex user instructions into sequential execution steps.
 - **Example**: `"open chrome and search AI news and send summary to Ali on WhatsApp"`
 - **Plan Generation**: Gemini parses the instruction and returns a structured list of steps.
+- **Intelligent Optimizer**: Before execution, the plan passes through `core/task_optimizer.py`. It automatically merges redundant steps (e.g. combining opening Chrome and performing a web search into a single action, or skipping separate folder creations if the file manager will auto-create the path anyway).
 - **Execution Flow**: Steps are executed sequentially. If any step fails, the planner halts execution to prevent runaway commands.
+
+## Dynamic Plugin Architecture
+
+All assistant actions are modularized as plugins under `/plugins/`:
+- **Plugin Registration**: Declared dynamically in `/plugins/registry.json`.
+- **Dynamic Importing**: The `PluginManager` reads the registry, dynamically imports class definitions using Python's `importlib`, and maps capability actions.
+- **Modularity**: Adding new actions or capabilities to Eric AI is as simple as subclassing `BasePlugin` and registering it in the JSON file. No direct execution happens outside this system.
+
+## Auto-Workflow Engine
+
+Eric AI actively monitors your command execution history to automate repeated tasks:
+- **Pattern Learning**: The workflow engine analyzes database action logs. If a specific chain of 2 or 3 actions occurs repeatedly (e.g. searching the web and sending the summary), it compiles them into a workflow.
+- **Local Persistence**: Automatically creates reusable workflow JSON configurations in the `/workflows/` directory.
+- **User Prompt Notification**: Announces new workflows when auto-learned: `"I noticed you often perform this sequence. I have automated it as [workflow name]."`
+- **Execution Command**: You can run workflows on demand by saying or typing `"run my [workflow name] workflow"`.
 
 ## Reliable Executor & Logging
 

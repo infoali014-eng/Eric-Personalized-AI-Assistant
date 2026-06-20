@@ -69,12 +69,18 @@ def update_memory_from_actions(command):
 def execute_plan(plan):
     """
     Executes a multi-step task plan sequentially.
-    Stops execution if any step fails.
+    Optimizes steps first, stops execution if any step fails, and triggers workflow learning.
     """
+    from core.task_optimizer import optimize_plan
+    from core.workflow_engine import workflow_engine
+    
+    # 1. Optimize plan steps
+    plan = optimize_plan(plan)
+    
     task = plan.get("task", "Unnamed Task")
     steps = plan.get("steps", [])
     
-    speak(f"Starting plan execution for task: {task}")
+    speak(f"Starting optimized plan execution for task: {task}")
     
     for step_data in steps:
         step_num = step_data.get("step")
@@ -100,5 +106,8 @@ def execute_plan(plan):
             speak(f"Execution halted: Exception in step {step_num}. Error: {e}")
             return False
             
+    # 2. Check for repeating patterns to automate workflows
+    workflow_engine.learn_workflows_from_history()
+    
     speak("All task plan steps executed successfully.")
     return True
